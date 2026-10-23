@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ job.job_name }} results</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="home-body admin-body">
+<main class="admin-shell">
+  <header class="admin-header">
+    <div><p class="eyebrow">Job results · {{ job.job_id }}</p><h1>{{ job.job_name }}</h1></div>
+    <div class="job-result-controls"><label><input id="resultVisibility" type="checkbox" {% if job.show_results_to_candidate %}checked{% endif %}> Show result to candidate</label><a class="button-link secondary" href="{{ url_for('admin_dashboard') }}">Back to jobs</a></div>
+  </header>
+  <div id="adminResultMessage" class="alert hidden"></div>
+  <section class="stats-grid">
+    <div class="stat-card"><strong>{{ summary.total_candidates }}</strong><span>Total candidates</span></div>
+    <div class="stat-card"><strong>{{ summary.completed_candidates }}</strong><span>Completed</span></div>
+    <div class="stat-card"><strong>{{ summary.evaluated_candidates }}</strong><span>Evaluated</span></div>
+    <div class="stat-card"><strong>{{ summary.average_score }}/100</strong><span>Average score</span></div>
+  </section>
+  <section class="home-panel results-panel">
+    <div class="results-heading"><h2>Candidate interviews</h2><small>{{ summary.poor_count }} Poor · {{ summary.satisfactory_count }} Satisfactory · {{ summary.good_count }} Good · {{ summary.well_done_count }} Well Done</small></div>
+    <div class="results-table-wrap"><table class="results-table"><thead><tr><th>Candidate</th><th>Candidate ID</th><th>Status</th><th>Score</th><th>Tag</th><th>Evaluation</th><th>Recording</th><th>Webhook</th><th>Admin</th></tr></thead><tbody>
+    {% for candidate in candidates %}
+      <tr>
+        <td><strong>{{ candidate.founder_name or 'Candidate' }}</strong><small>{{ candidate.email_address or '' }}</small></td>
+        <td>{{ candidate.applicant_user_id or '—' }}</td>
+        <td>{{ candidate.status }}</td>
+        <td>{{ candidate.result_score if candidate.result_score is not none else '—' }}</td>
+        <td><span class="result-tag {{ (candidate.result_tag or '')|lower|replace(' ', '-') }}">{{ candidate.result_tag or 'Pending' }}</span></td>
+        <td class="evaluation-summary">
+          {% if candidate.evaluation %}
+            {{ candidate.evaluation.summary }}
+          {% elif candidate.evaluation_error %}
+            <span class="evaluation-error">{{ candidate.evaluation_error }}</span>
+            {% if candidate.session_code %}<button class="secondary compact-button evaluate-button inline-evaluate-button" type="button" data-session-code="{{ candidate.session_code }}">Evaluate again</button>{% endif %}
+          {% else %}
+            Evaluation pending
+            {% if candidate.session_code %}<button class="secondary compact-button evaluate-button inline-evaluate-button" type="button" data-session-code="{{ candidate.session_code }}">Evaluate</button>{% endif %}
+          {% endif %}
+        </td>
+        <td>{% if candidate.recording_url %}<a class="button-link secondary compact-button" href="{{ candidate.recording_url }}" target="_blank">View video</a>{% else %}Not uploaded{% endif %}</td>
+        <td>{{ candidate.webhook_status or 'Pending' }}</td>
+        <td class="admin-actions">
+          {% if candidate.applicant_user_id %}<button class="secondary compact-button reopen-button" type="button" data-candidate-id="{{ candidate.applicant_user_id }}">Reopen</button>{% endif %}
+        </td>
+      </tr>
+    {% else %}<tr><td colspan="9" class="muted">No candidates have started this job yet.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+</main>
+<script>
+const jobId = {{ job.job_id|tojson }};
+const resultMessage = document.getElementById("adminResultMessage");
+function showResultMessage(text) { resultMessage.textContent = text; resultMessage.classList.remove("hidden"); }
+document.getElementById("resultVisibility").addEventListener("change", async event => {
+  const enabled = event.target.checked;
+  const response = await fetch(`/api/admin/jobs/${encodeURIComponent(jobId)}/result-visibility`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ show_results_to_candidate: enabled })
+  });
+  if (!response.ok) {
+    event.target.checked = !enabled;
+    const result = await response.json();
+    showResultMessage(result.error || "Could not update result visibility.");
+    return;
+  }
+  showResultMessage(enabled ? "Candidate result visibility enabled." : "Candidate result visibility disabled.");
+});
+document.querySelectorAll(".evaluate-button").forEach(button => button.addEventListener("click", async () => {
+  button.disabled = true;
+  button.textContent = "Evaluating...";
+  try {
+    const response = await fetch(`/api/admin/sessions/${encodeURIComponent(button.dataset.sessionCode)}/evaluate`, { method: "POST" });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Evaluation failed.");
+    showResultMessage(`Evaluation complete: ${result.evaluation.score}/100 · ${result.evaluation.tag}`);
+    window.setTimeout(() => window.location.reload(), 800);
+  } catch (error) {
+    showResultMessage(error.message);
+    button.disabled = false;
+    button.textContent = "Evaluate";
+  }
+}));
+document.querySelectorAll(".reopen-button").forEach(button => button.addEventListener("click", async () => {
+  if (!confirm("Delete this candidate attempt and allow a retake?")) return;
+  const response = await fetch(`/api/admin/jobs/${encodeURIComponent(jobId)}/candidates/${encodeURIComponent(button.dataset.candidateId)}/reopen`, { method: "POST" });
+  const result = await response.json();
+  if (!response.ok) { showResultMessage(result.error || "Could not reopen interview."); return; }
+  window.location.reload();
+}));
+</script>
+</body>
+</html>

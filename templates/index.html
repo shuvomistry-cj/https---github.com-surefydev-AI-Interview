@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Interview Platform</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="home-body">
+  <main class="home-shell">
+    <section class="home-panel">
+      <p class="eyebrow">AI Interview Platform</p>
+      <h1>Complete your interview</h1>
+      <p class="home-copy">Enter the Job ID supplied by your employer. You will see the job details, instructions, language options, and interview before recording begins.</p>
+      {% if error %}<div class="alert">{{ error }}</div>{% endif %}
+      <form action="{{ url_for('candidate_lookup') }}" method="post" class="candidate-launch-form">
+        <label for="job_id">Job ID</label>
+        <input id="job_id" name="job_id" required placeholder="For example: fe001">
+        <label for="candidate_user_id">Candidate ID <span class="muted">(optional for local testing)</span></label>
+        <input id="candidate_user_id" name="user_id" placeholder="Your candidate/user ID">
+        <button type="submit">Continue</button>
+      </form>
+      <p class="admin-entry"><a href="{{ url_for('admin_login') }}">Admin portal</a></p>
+    </section>
+  </main>
+</body>
+</html>

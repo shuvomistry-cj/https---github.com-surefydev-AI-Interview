@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ job.job_name }} interview</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="home-body">
+  <main class="home-shell">
+    <section class="home-panel onboarding-card">
+      <p class="eyebrow">AI interview · {{ job.job_id }}</p>
+      <h1>{{ job.job_name }}</h1>
+      <p class="home-copy">{{ job.job_description }}</p>
+      {% if error %}<div class="alert">{{ error }}</div>{% endif %}
+      <div class="instructions">
+        <h2>Before you begin</h2>
+        <ol>
+          <li>Use a quiet, well-lit place and keep your face visible.</li>
+          <li>Allow camera and microphone access when asked.</li>
+          <li>Answer each question naturally in the selected language.</li>
+          <li>The interview will finish automatically after the configured duration.</li>
+        </ol>
+      </div>
+      <form method="post" class="stack-form">
+        <input type="hidden" name="token" value="{{ token }}">
+        <input type="hidden" name="user_id" value="{{ token_data.get('userId', '') or local_user_id }}">
+        <label>Your name
+          <input name="full_name" required value="{{ candidate_name or '' }}" placeholder="Your full name">
+        </label>
+        <label>Email
+          <input name="email_address" type="email" {% if not token_data.get('userId') and not local_user_id %}required{% endif %} value="{{ candidate_email or '' }}" placeholder="you@example.com">
+        </label>
+        <label>Available language
+          <select name="language">
+            {% for language in languages %}
+              <option value="{{ language }}" {% if language == selected_language %}selected{% endif %}>{{ {'en':'English','hi':'Hindi','te':'Telugu'}.get(language, language|upper) }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <button type="submit">Continue to interview</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

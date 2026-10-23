@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Interview Administration</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="home-body admin-body">
+<main class="admin-shell">
+  <header class="admin-header"><div><p class="eyebrow">AI Interview Platform</p><h1>Jobs and question banks</h1></div><form method="post" action="{{ url_for('admin_logout') }}"><button class="secondary" type="submit">Sign out</button></form></header>
+  <div id="adminMessage" class="alert hidden"></div>
+  <section class="admin-grid">
+    <form id="jobForm" class="home-panel stack-form">
+      <h2>1. Create job</h2>
+      <p class="muted">Paste a job description, test brief, or your own question requirements. Groq will use this source to draft the question bank.</p>
+      <label>Job ID<input name="job_id" required placeholder="frontend-engineer-001"></label>
+      <label>Job name<input name="job_name" required placeholder="Frontend Engineer"></label>
+      <label>Employer ID<input name="employer_id" placeholder="employer_456"></label>
+      <label>JD / test brief / question requirements<textarea name="job_description" rows="12" required placeholder="Paste the JD or describe the test questions you need..."></textarea></label>
+      <div class="two-col"><label>Duration (minutes)<input name="duration_minutes" type="number" min="1" max="120" value="15"></label><label>Question count<input name="question_count" type="number" min="1" max="30" value="8"></label></div>
+      <label>Candidate attempts<select name="attempt_mode"><option value="single">Single attempt (admin must reopen)</option><option value="multi">Multiple attempts (new attempt replaces previous)</option></select></label>
+      <div class="choice-row"><label><input type="checkbox" name="show_results_to_candidate"> Show evaluation result to candidate after completion</label></div>
+      <label>Languages (comma separated)<input name="languages" value="en,hi" placeholder="en,hi,te"></label>
+      <div class="choice-row"><label><input type="checkbox" name="include_mcq" checked> Include multiple choice</label></div>
+      <button type="submit">Create job and generate questions</button>
+    </form>
+    <section id="questionEditor" class="home-panel hidden">
+      <div class="question-editor-title"><h2>2. Review and edit questions</h2><button id="addQuestionBtn" class="secondary" type="button">Add question manually</button></div>
+      <p id="activeJobLabel" class="muted"></p>
+      <div id="questionList" class="question-editor-list"></div>
+      <div class="question-editor-actions"><button id="generateAgainBtn" class="secondary" type="button">Regenerate draft</button><button id="deleteQuestionsBtn" class="danger-control" type="button">Delete question bank</button><button id="saveQuestionsBtn" type="button">Save question bank</button></div>
+    </section>
+  </section>
+  <section class="home-panel jobs-panel"><h2>Configured jobs</h2><div id="jobsList">{% for job in jobs %}<article class="job-card"><div><p class="eyebrow">{{ job.job_id }}</p><h3>{{ job.job_name }}</h3><p>{{ job.job_description[:180] }}{% if job.job_description|length > 180 %}…{% endif %}</p><small>{{ (job.duration_seconds / 60)|round|int }} min · {{ job.languages|join(', ') }} · {{ job.questions|length }} questions · {{ 'Multiple attempts' if job.attempt_mode == 'multi' else 'Single attempt' }}</small><div class="job-stats"><span>{{ job.stats.total_candidates }} candidates</span><span>{{ job.stats.completed_candidates }} completed</span><span>Avg {{ job.stats.average_score }}/100</span></div></div><div class="job-card-actions"><a class="button-link secondary" href="{{ url_for('admin_job_candidates', job_id=job.job_id) }}">View results</a><button class="secondary" type="button" data-edit-job="{{ job.job_id }}" data-job-name="{{ job.job_name }}" data-job-source="{{ job.job_description }}" data-job-language="{{ job.languages[0] if job.languages else 'en' }}">Edit questions</button><button class="secondary" type="button" data-job-id="{{ job.job_id }}" data-job-name="{{ job.job_name }}">Copy candidate link</button></div></article>{% else %}<p class="muted">No jobs configured yet.</p>{% endfor %}</div></section>
+</main>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

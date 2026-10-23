@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Interview results | Interview Platform</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="home-body">
+  <main class="home-shell">
+    <section class="home-panel sessions-panel">
+      <div class="sessions-header">
+        <div class="page-brand page-brand-compact">
+          <a href="{{ url_for('index') }}" aria-label="Interview platform home">
+            <img class="brand-logo brand-logo-section" src="{{ url_for('static', filename='img/logo.png') }}" alt="AI Interview Platform">
+          </a>
+          <div>
+            <p class="eyebrow">Saved videos</p>
+            <h1>My Sessions</h1>
+            <p class="home-copy">Session ID: {{ session.session_code }}</p>
+          </div>
+        </div>
+        <a class="button-link secondary" href="{{ url_for('session_room', session_code=session.session_code) }}">Back to Portal</a>
+      </div>
+
+      {% if recordings %}
+        <div class="session-list">
+          {% for item in recordings %}
+            <article class="session-card">
+              <div>
+                <span class="session-code">Video {{ loop.index }}</span>
+                <p>
+                  {{ "%.0f"|format(item.duration or 0) }} sec
+                  | saved {{ item.created_at }}
+                </p>
+                {% if item.editing_status %}
+                  <span class="editing-status-pill status-{{ item.editing_status }}">AI editing: {{ item.editing_status|replace('_', ' ') }}</span>
+                  {% if item.editing_error and item.editing_status == 'failed' %}
+                    <p class="editing-error-summary">{{ item.editing_error }}</p>
+                  {% endif %}
+                {% endif %}
+              </div>
+              <div class="session-card-actions">
+                <a class="button-link secondary" href="{{ url_for('recording_by_id', recording_id=item.id) }}" target="_blank">View</a>
+                <a class="button-link" href="{{ url_for('download_recording_by_id', recording_id=item.id) }}">Download</a>
+                <button type="button" class="secondary" data-share-url="{{ url_for('recording_by_id', recording_id=item.id) }}" data-share-title="{{ session.founder_name }} | {{ session.designation }} of {{ session.startup_name }}">Share</button>
+                {% if item.editing_status == 'completed' and item.edited_video_url %}
+                  <a class="button-link secondary" href="{{ item.edited_video_url }}" target="_blank">Edited Video</a>
+                  <button type="button" class="secondary" data-share-url="{{ item.edited_video_url }}" data-share-title="{{ session.founder_name }} | {{ session.designation }} of {{ session.startup_name }} — Edited Interview">Share Edited</button>
+                {% endif %}
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="empty-state">No saved videos found.</p>
+      {% endif %}
+    </section>
+  </main>
+  <script src="{{ url_for('static', filename='js/share.js') }}?v=1"></script>
+</body>
+</html>

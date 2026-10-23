@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Interview not found | Interview Platform</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="home-body">
+  <main class="home-shell">
+    <section class="home-panel compact">
+      <a class="missing-logo-link" href="{{ url_for('index') }}" aria-label="Interview platform home">
+        <img class="brand-logo brand-logo-section" src="{{ url_for('static', filename='img/logo.png') }}" alt="AI Interview Platform">
+      </a>
+      <p class="eyebrow">Missing session</p>
+      <h1>Session not found</h1>
+      <p class="home-copy">{{ session_code }}</p>
+      <a class="button-link" href="{{ url_for('index') }}">Back Home</a>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ job.job_name if job else 'AI Interview' }} | Interview Platform</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <main class="meet-shell">
+    <section class="stage">
+      <header class="topbar">
+        <div class="topbar-brand">
+          <a href="{{ url_for('index') }}" aria-label="Interview platform home">
+            <img class="brand-logo brand-logo-session" src="{{ url_for('static', filename='img/logo.png') }}" alt="AI Interview Platform">
+          </a>
+          <div>
+            <p class="eyebrow">AI Interview Platform</p>
+            <h1>{{ job.job_name if job else 'AI Interview' }}</h1>
+          </div>
+        </div>
+        <div class="session-meta">
+          <a class="topbar-link" href="{{ url_for('my_sessions', session_code=session.session_code) }}">My Sessions</a>
+          <span id="statusPill" class="pill">{{ session.status }}</span>
+          <span>{{ session.session_code }}</span>
+        </div>
+      </header>
+
+      <div class="video-wrap">
+        <video id="localVideo" {% if recording_url %}src="{{ recording_url }}" controls{% else %}autoplay playsinline muted{% endif %}></video>
+        <div id="questionOverlay" class="question-overlay hidden" aria-live="polite">
+          <span id="questionOverlayLabel">AI Interviewer</span>
+          <p id="questionOverlayText"></p>
+        </div>
+        <div id="faceGuide" class="face-guide {% if recording_url %}hidden{% endif %}" aria-hidden="true"></div>
+        <div id="permissionOverlay" class="permission-overlay {% if recording_url %}hidden{% endif %}">
+          <h2>Camera preview</h2>
+          <p id="permissionText">Allow camera and microphone to begin your interview.</p>
+          <button id="permissionBtn" type="button">Allow Camera & Mic</button>
+        </div>
+        <div class="timer" id="timer">00:00</div>
+        <div id="recordingBanner" class="recording-banner hidden">
+          <span id="recordingDot" class="recording-dot"></span>
+          <div>
+            <strong id="recordingTitle">Listening</strong>
+            <p id="recordingText">Speak naturally. I will wait through short pauses.</p>
+          </div>
+        </div>
+        <div id="faceWarning" class="face-warning hidden">
+          Please come back into the frame.
+        </div>
+      </div>
+
+      <div class="control-bar">
+        <button id="micBtn" type="button" class="control-btn">Mic On</button>
+        <button id="cameraBtn" type="button" class="control-btn">Camera On</button>
+        <select id="languageSelect" class="language-control">
+          <option value="en" {% if session.language == "en" %}selected{% endif %}>English</option>
+          <option value="hi" {% if session.language == "hi" %}selected{% endif %}>Hindi</option>
+        </select>
+        <button id="startBtn" type="button" class="primary-control">Start Session</button>
+        <button id="endBtn" type="button" class="danger-control" disabled>End Session</button>
+      </div>
+    </section>
+
+    <aside class="transcript-panel">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow">Transcript</p>
+          <h2>AI Questions & Answers</h2>
+        </div>
+      </div>
+
+      <div class="share-box">
+        <label for="shareLink">Session link</label>
+        <div class="share-row">
+          <input id="shareLink" value="{{ session.session_link }}" readonly>
+          <button id="copyLinkBtn" type="button">Copy</button>
+        </div>
+        <label for="sessionCodeInput">Session code</label>
+        <div class="share-row">
+          <input id="sessionCodeInput" value="{{ session.session_code }}" readonly>
+          <button id="copyCodeBtn" type="button">Copy Code</button>
+        </div>
+      </div>
+
+      <div id="chatLog" class="chat-log"></div>
+
+      <div id="answerBox" class="answer-box hidden">
+        <div id="questionOptions" class="question-options hidden" aria-label="Answer options"></div>
+        <label for="manualAnswer">Answer transcript</label>
+        <textarea id="manualAnswer" rows="4" placeholder="Your voice transcript will appear here. You can edit it before saving."></textarea>
+        <div class="answer-actions">
+          <button id="recordAnswerBtn" type="button" class="secondary">Record Again</button>
+          <button id="transcribeAnswerBtn" type="button" class="secondary">Stop & Transcribe</button>
+          <button id="submitAnswerBtn" type="button">Continue</button>
+        </div>
+      </div>
+
+      <div id="postSessionBox" class="post-session-box hidden">
+        <p id="postSessionText">Session completed. Save it or start again.</p>
+        <div class="post-session-actions">
+          <button id="saveSessionBtn" type="button">Save Session</button>
+          <button id="startAgainBtn" type="button" class="secondary">Start Again</button>
+        </div>
+        <div id="videoEditingBox" class="video-editing-box hidden">
+          <div class="video-editing-heading">
+            <strong>AI video editing</strong>
+            <span id="videoEditingStatus" class="editing-status-pill">Not submitted</span>
+          </div>
+          <p id="videoEditingMessage"></p>
+          <button id="retryVideoEditingBtn" type="button" class="secondary hidden">Retry Editing</button>
+          <div id="editedVideoActions" class="edited-video-actions hidden">
+            <a id="previewEditedVideoBtn" class="button-link secondary" href="#" target="_blank">Preview Edited Video</a>
+            <a id="downloadEditedVideoBtn" class="button-link" href="#" download>Download Edited Video</a>
+            <button id="shareEditedVideoBtn" type="button" class="secondary" data-share-url="" data-share-title="{{ session.founder_name }} | {{ session.designation }} of {{ session.startup_name }} — Edited Interview">Share Edited Video</button>
+          </div>
+        </div>
+        <div id="evaluationBox" class="evaluation-box hidden">
+          <p class="eyebrow">Interview result</p>
+          <h2><span id="evaluationScore">--</span>/100</h2>
+          <strong id="evaluationTag"></strong>
+          <p id="evaluationSummary"></p>
+        </div>
+        <div id="previewActions" class="preview-actions hidden">
+          <a id="previewRecordingBtn" class="button-link secondary" href="#" target="_blank">Preview Recording</a>
+          <a id="downloadRecordingBtn" class="button-link" href="#" download>Download Video</a>
+          <button id="shareRecordingBtn" type="button" class="secondary" data-share-url="" data-share-title="{{ session.founder_name }} | {{ session.designation }} of {{ session.startup_name }}">Share</button>
+          <a class="button-link secondary" href="{{ url_for('my_sessions', session_code=session.session_code) }}">My Sessions</a>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    window.SESSION_CODE = "{{ session.session_code }}";
+    window.INITIAL_LANGUAGE = "{{ session.language }}";
+    window.INTERVIEW_GREETING = {{ greeting|tojson }};
+    window.INTERVIEW_CLOSING = {{ closing|tojson }};
+    window.INTERVIEW_QUESTIONS = {{ questions|tojson }};
+    window.INTERVIEW_QUESTION_META = {{ question_meta|tojson }};
+    window.INTERVIEW_DURATION_SECONDS = {{ (session.duration_seconds or 900)|int }};
+    window.INTERVIEW_JOB_NAME = {{ (job.job_name if job else "AI Interview")|tojson }};
+    window.SESSION_STATUS = "{{ session.status }}";
+    window.SAVED_TRANSCRIPTS = {{ transcripts|tojson }};
+    window.RECORDING_URL = {{ recording_url|tojson }};
+    window.INITIAL_VIDEO_EDITING = {{ editing_job|tojson }};
+    window.INITIAL_EVALUATION = {{ evaluation|tojson }};
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js"></script>
+  <script src="{{ url_for('static', filename='js/share.js') }}?v=1"></script>
+  <script src="{{ url_for('static', filename='js/session.js') }}?v=21"></script>
+</body>
+</html>
